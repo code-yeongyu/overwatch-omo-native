@@ -28,12 +28,13 @@ Built with **TypeScript 7 (tsgo)**, **Three.js**, **Biome**, **Vite**, and **Bun
 
 Measured on Apple M5 Max at 1920x1080 for 60 seconds:
 
-- p50 frame time: 13.8 ms (72.5 FPS)
-- p95 frame time: 16.1 ms (62.1 FPS)
-- p99 frame time: 17.0 ms (58.8 FPS)
-- max spike: 67.2 ms
+- p50 frame time: 13.0 ms (76.9 FPS)
+- p95 frame time: 15.1 ms (66.2 FPS)
+- p99 frame time: 17.9 ms (55.9 FPS)
+- max spike: 62.2 ms
 
 Run the benchmark yourself with `bun run script/qa/perf-benchmark.mjs`.
+
 
 ## Quick start
 

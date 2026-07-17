@@ -30,9 +30,14 @@ export class GameRenderer {
       1000,
     );
 
-    this.renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: true });
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      context: gl,
+      antialias: false,
+      powerPreference: "high-performance",
+    });
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
     const ambient = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambient);

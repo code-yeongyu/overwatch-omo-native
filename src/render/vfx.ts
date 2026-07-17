@@ -36,7 +36,7 @@ export function createVfxSystem(scene: THREE.Scene, camera: FirstPersonCamera): 
       const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.object.quaternion);
       const end = origin.clone().add(dir.multiplyScalar(40));
       const geometry = new THREE.BufferGeometry().setFromPoints([origin, end]);
-      const mesh = new THREE.Line(geometry, tracerMaterial);
+      const mesh = new THREE.Line(geometry, tracerMaterial.clone());
       scene.add(mesh);
       tracers.push({ mesh, life: 0.05 });
     },
@@ -54,6 +54,8 @@ export function createVfxSystem(scene: THREE.Scene, camera: FirstPersonCamera): 
         if (t.life <= 0) {
           scene.remove(t.mesh);
           t.mesh.geometry.dispose();
+          const material = t.mesh.material as THREE.LineBasicMaterial;
+          material.dispose();
           tracers.splice(i, 1);
         }
       }

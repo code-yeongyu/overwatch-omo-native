@@ -24,13 +24,13 @@ export function buildPracticeRange(renderer: GameRenderer, spatial: SpatialHash)
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  const grid = new THREE.GridHelper(120, 60, 0x556677, 0x445566);
+  const grid = new THREE.GridHelper(120, 40, 0x556677, 0x445566);
   scene.add(grid);
 
   const targets: Target[] = [];
   for (let i = 0; i < 8; i++) {
     const distance = 5 + i * 5;
-    const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+    const geometry = new THREE.SphereGeometry(0.5, 12, 12);
     const material = new THREE.MeshLambertMaterial({ color: 0xff4444 });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(0, 1.5, -distance);
