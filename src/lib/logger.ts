@@ -64,7 +64,6 @@ export class ConsoleLogger implements Logger {
 
     const output = JSON.stringify(entry);
     const sink = level === "warn" ? console.warn : level === "error" ? console.error : console.log;
-    // biome-ignore lint/suspicious/noConsole: structured logging sink
     sink(output);
   }
 }
