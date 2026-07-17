@@ -12,6 +12,7 @@ export interface GameLoop {
 export interface LoopHooks {
   simulate(inputForStep: number, dt: number): void;
   render(alpha: number): void;
+  onFrameMetrics?(metrics: { frameTimeMs: number }): void;
 }
 
 export function createGameLoop(hooks: LoopHooks, logger: Logger): GameLoop {
@@ -48,7 +49,8 @@ export function createGameLoop(hooks: LoopHooks, logger: Logger): GameLoop {
       logger.warn("game loop caught up; dropping time", { accumulator });
     }
 
-    hooks.render(accumulator / STEP_SECONDS);
+    const alpha = accumulator / STEP_SECONDS;
+    hooks.render(alpha);
   }
 
   return {
