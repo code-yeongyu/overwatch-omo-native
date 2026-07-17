@@ -15,7 +15,8 @@
     "check": "biome check .",
     "ci": "biome ci .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "qa:visual": "bun run script/qa/browser-smoke.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.4",
@@ -24,7 +25,8 @@
     "typescript": "^7.0.0-beta",
     "vite": "8.1.5",
     "vitest": "4.1.10",
-    "happy-dom": "latest"
+    "happy-dom": "latest",
+    "@playwright/test": "latest"
   },
   "dependencies": {
     "three": "^0.175.0"

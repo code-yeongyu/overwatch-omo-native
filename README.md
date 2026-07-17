@@ -4,6 +4,12 @@ A browser-based, single-player Overwatch-style Practice Range (연습장) featur
 
 Built with **TypeScript 7 (tsgo)**, **Three.js**, **Biome**, **Vite**, and **Bun**.
 
+## Screenshots
+
+![Lobby](.omo/evidence/visual-qa/01-lobby.png)
+![In-game](.omo/evidence/visual-qa/02-game.png)
+![Firing](.omo/evidence/visual-qa/04-fired.png)
+
 ## Features
 
 - Lobby with hero selection and Practice Range launch
