@@ -1,219 +1,238 @@
+import type { ScoreState } from "../game/score.js";
+import { asset } from "../lib/assets.js";
+import "./styles.css";
+
 export interface Hud {
   container: HTMLDivElement;
-  setHealth(value: number): void;
-  setAmmo(current: number, max: number): void;
-  setAbilityCooldowns(helix: number, biotic: number): void;
-  setUltimate(charge: number): void;
-  setState(state: string): void;
-  setVisorActive(active: boolean): void;
+  update(params: HudUpdateParams): void;
   showDamageNumber(amount: number): void;
+  flashHitmarker(kind: "hit" | "kill"): void;
+  pushKillfeed(botId: number): void;
   destroy(): void;
 }
 
+export interface HudUpdateParams {
+  health: number;
+  maxHealth: number;
+  ammo: number;
+  maxAmmo: number;
+  reloading: boolean;
+  helixCooldown: number;
+  helixMax: number;
+  bioticCooldown: number;
+  bioticMax: number;
+  bioticActive: boolean;
+  ultimateCharge: number;
+  visorActive: boolean;
+  visorRemaining: number;
+  visorDuration: number;
+  score: ScoreState;
+  locked: boolean;
+}
+
+const HP_SEGMENTS = 8;
+const FEED_TTL_MS = 3600;
+
 export function createHud(): Hud {
   const container = document.createElement("div");
-  container.style.cssText = `
-    position: absolute; inset: 0; pointer-events: none; overflow: hidden;
-    font-family: "Big Noodle Too", "Industry", Impact, system-ui, sans-serif;
-    text-transform: uppercase; letter-spacing: 0.05em; color: #fff;
+  container.className = "hud";
+  container.innerHTML = `
+    <div class="hud__scoreboard">
+      <div><dt>Elims</dt><dd data-h="elims">0</dd></div>
+      <div><dt>Damage</dt><dd data-h="damage">0</dd></div>
+      <div><dt>Accuracy</dt><dd data-h="acc">—</dd></div>
+      <div><dt>Time</dt><dd data-h="time">0:00</dd></div>
+    </div>
+    <div class="hud__killfeed" data-h="killfeed"></div>
+    <div class="hud__crosshair"><i class="cx-t"></i><i class="cx-b"></i><i class="cx-l"></i><i class="cx-r"></i></div>
+    <div class="hud__hitmarker" data-h="hitmarker"><i class="hm-tl"></i><i class="hm-tr"></i><i class="hm-bl"></i><i class="hm-br"></i></div>
+    <div class="hud__hp">
+      <div class="hud__hp-num" data-h="hp">200</div>
+      <div class="hud__hp-bar" data-h="hpbar"></div>
+      <div class="hud__hp-state" data-h="healstate">▲ Biotic Field</div>
+    </div>
+    <div class="hud__ult">
+      <div class="hud__ult-ring" data-h="ultring"><span class="hud__ult-val" data-h="ult">0%</span></div>
+      <div class="hud__ult-hint">Q — Tactical Visor</div>
+    </div>
+    <div class="hud__abilities">
+      <div class="hud__ability" data-h="ab-sprint"><img src="${asset("assets/icon_sprint.png")}" alt="Sprint" /><span class="hud__ability-key">SHIFT</span></div>
+      <div class="hud__ability" data-h="ab-helix"><img src="${asset("assets/icon_helix.png")}" alt="Helix" /><span class="hud__ability-key">E</span><div class="hud__ability-cd" data-h="cd-helix" hidden></div></div>
+      <div class="hud__ability" data-h="ab-biotic"><img src="${asset("assets/icon_biotic.png")}" alt="Biotic" /><span class="hud__ability-key">F</span><div class="hud__ability-cd" data-h="cd-biotic" hidden></div></div>
+    </div>
+    <div class="hud__weapon">
+      <div class="hud__weapon-reload" data-h="reload">Reloading</div>
+      <div class="hud__weapon-ammo"><span data-h="ammo">30</span><small> / 30</small></div>
+      <div class="hud__weapon-name">Heavy Pulse Rifle</div>
+    </div>
+    <div class="hud__visor" data-h="visor">
+      <div class="hud__visor-label">Tactical Visor</div>
+      <div class="hud__visor-bar"><div class="hud__visor-fill" data-h="visor-fill"></div></div>
+    </div>
+    <div class="hud__lock" data-h="lock">
+      <div class="hud__lock-box">
+        <div class="hud__lock-title">Click to Enter Combat</div>
+        <div class="hud__lock-sub">Click to lock aim — press Esc to release</div>
+        <div class="hud__controls">
+          <span><b>WASD</b>Move</span><span><b>Shift</b>Sprint</span>
+          <span><b>Space</b>Jump</span><span><b>LMB</b>Fire</span>
+          <span><b>E</b>Helix Rockets</span><span><b>F</b>Biotic Field</span>
+          <span><b>Q</b>Tactical Visor</span><span><b>R</b>Reload</span>
+        </div>
+        <button class="hud__lock-btn" data-act="lobby">Exit to Lobby</button>
+      </div>
+    </div>
   `;
 
-  // Reticle
-  const reticle = document.createElement("div");
-  reticle.style.cssText = `
-    position: absolute; left: 50%; top: 50%; width: 16px; height: 16px;
-    transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,0.85);
-    border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.6);
-  `;
-  const reticleDot = document.createElement("div");
-  reticleDot.style.cssText = `
-    position: absolute; left: 50%; top: 50%; width: 3px; height: 3px;
-    transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); border-radius: 50%;
-  `;
-  reticle.appendChild(reticleDot);
-  container.appendChild(reticle);
+  const refs = new Map<string, HTMLElement>();
+  const textCache = new Map<string, string>();
+  const timers = new Set<ReturnType<typeof setTimeout>>();
 
-  // Bottom panel
-  const bottom = document.createElement("div");
-  bottom.style.cssText = `
-    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: flex-end; gap: 16px;
-  `;
+  function q(name: string): HTMLElement {
+    const cached = refs.get(name);
+    if (cached) return cached;
+    const el = container.querySelector<HTMLElement>(`[data-h="${name}"]`);
+    if (!el) throw new Error(`hud element missing: ${name}`);
+    refs.set(name, el);
+    return el;
+  }
 
-  // Health
-  const healthBox = createPanel("200", "HP", "#00ff44");
-  bottom.appendChild(healthBox.panel);
+  function setText(name: string, value: string): void {
+    if (textCache.get(name) === value) return;
+    textCache.set(name, value);
+    q(name).textContent = value;
+  }
 
-  // Abilities
-  const abilities = document.createElement("div");
-  abilities.style.cssText = "display: flex; gap: 8px; align-items: flex-end;";
-  const helixIcon = createAbilityIcon("E", "Helix");
-  const bioticIcon = createAbilityIcon("F", "Field");
-  abilities.appendChild(helixIcon);
-  abilities.appendChild(bioticIcon);
-  bottom.appendChild(abilities);
+  function updateCooldown(
+    cdName: string,
+    abilityName: string,
+    remaining: number,
+    total: number,
+  ): void {
+    const cd = q(cdName) as HTMLDivElement;
+    const ability = q(abilityName);
+    cd.hidden = remaining <= 0;
+    if (remaining > 0) {
+      cd.style.setProperty("--cd", `${(remaining / total) * 100}%`);
+      cd.textContent = String(Math.ceil(remaining));
+    }
+    ability.classList.toggle("hud__ability--ready", remaining <= 0);
+  }
 
-  // Ammo
-  const ammoBox = createAmmoPanel();
-  bottom.appendChild(ammoBox.panel);
+  function updateHp(health: number, maxHealth: number, bioticActive: boolean): void {
+    setText("hp", String(Math.ceil(health)));
+    const segs = q("hpbar").children;
+    const perSeg = maxHealth / HP_SEGMENTS;
+    for (let i = 0; i < segs.length; i++) {
+      const seg = segs[i];
+      if (seg) {
+        const full = health > i * perSeg;
+        seg.className = `hud__hp-seg${full ? " hud__hp-seg--full" : ""}`;
+      }
+    }
+    q("healstate").classList.toggle("hud__hp-state--on", bioticActive);
+  }
 
-  container.appendChild(bottom);
+  function updateUlt(charge: number, active: boolean, remaining: number, duration: number): void {
+    const pct = active ? 100 : Math.min(100, charge);
+    setText("ult", active ? "★" : `${pct}%`);
+    q("ultring").style.setProperty("--ult-pct", `${pct}%`);
+    q("ultring").classList.toggle("hud__ult--ready", pct >= 100 && !active);
+    q("visor").classList.toggle("hud__visor--on", active);
+    if (active) {
+      (q("visor-fill") as HTMLDivElement).style.transform = `scaleX(${remaining / duration})`;
+    }
+  }
 
-  // Ultimate meter
-  const ult = createUltimateMeter();
-  ult.panel.style.cssText = `
-    position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-    width: 280px; height: 12px; background: rgba(0,0,0,0.5); border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.3); overflow: hidden;
-  `;
-  container.appendChild(ult.panel);
+  function updateScore(score: ScoreState): void {
+    setText("elims", String(score.kills));
+    setText("damage", String(Math.round(score.damage)));
+    setText(
+      "acc",
+      score.shotsFired === 0 ? "—" : `${Math.round((score.shotsHit / score.shotsFired) * 100)}%`,
+    );
+    const seconds = Math.floor((performance.now() - score.startedAt) / 1000);
+    setText("time", `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`);
+  }
 
-  // State / feedback
-  const stateLabel = document.createElement("div");
-  stateLabel.style.cssText = `
-    position: absolute; top: 24px; right: 24px; font-size: 18px; color: #ffaa00;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-  `;
-  container.appendChild(stateLabel);
-
-  // Visor indicator
-  const visorLabel = document.createElement("div");
-  visorLabel.textContent = "TACTICAL VISOR ACTIVE";
-  visorLabel.style.cssText = `
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 22px; font-weight: 800; color: #ff6600; opacity: 0;
-    text-shadow: 0 0 12px rgba(255,102,0,0.8); transition: opacity 0.2s ease;
-    pointer-events: none;
-  `;
-  container.appendChild(visorLabel);
-
-  // Damage numbers container
-  const damageContainer = document.createElement("div");
-  damageContainer.style.cssText = `
-    position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-  `;
-  container.appendChild(damageContainer);
+  function buildHpSegments(): void {
+    const bar = q("hpbar");
+    for (let i = 0; i < HP_SEGMENTS; i++) {
+      const seg = document.createElement("i");
+      seg.className = "hud__hp-seg hud__hp-seg--full";
+      bar.appendChild(seg);
+    }
+  }
+  buildHpSegments();
 
   return {
     container,
-    setHealth(value) {
-      healthBox.value.textContent = String(Math.max(0, Math.round(value)));
-    },
-    setAmmo(current, max) {
-      ammoBox.current.textContent = String(current);
-      ammoBox.max.textContent = String(max);
-    },
-    setAbilityCooldowns(helix, biotic) {
-      setCooldown(helixIcon, helix);
-      setCooldown(bioticIcon, biotic);
-    },
-    setUltimate(charge) {
-      ult.fill.style.width = `${Math.min(100, charge)}%`;
-      ult.fill.style.background =
-        charge >= 100
-          ? "linear-gradient(90deg, #ff6600, #ffcc00)"
-          : "linear-gradient(90deg, #4488ff, #44ccff)";
-    },
-    setState(state) {
-      stateLabel.textContent = state;
-    },
-    setVisorActive(active) {
-      visorLabel.style.opacity = active ? "1" : "0";
+    update(params) {
+      setText("ammo", String(params.ammo));
+      q("reload").classList.toggle("hud__weapon-reload--on", params.reloading);
+      updateHp(params.health, params.maxHealth, params.bioticActive);
+      updateUlt(
+        params.ultimateCharge,
+        params.visorActive,
+        params.visorRemaining,
+        params.visorDuration,
+      );
+      updateCooldown("cd-helix", "ab-helix", params.helixCooldown, params.helixMax);
+      updateCooldown("cd-biotic", "ab-biotic", params.bioticCooldown, params.bioticMax);
+      q("ab-sprint").classList.toggle("hud__ability--ready", true);
+      q("lock").classList.toggle("hud__lock--hidden", !params.locked);
+      updateScore(params.score);
     },
     showDamageNumber(amount) {
       const el = document.createElement("div");
       el.textContent = String(Math.round(amount));
       el.style.cssText = `
-        font-size: 28px; font-weight: bold; color: #ff4444;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        animation: damageFloat 0.8s ease-out forwards;
+        position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
+        font-size: 26px; font-weight: 700; color: #ff4444;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        animation: damageFloat 0.7s ease-out forwards; pointer-events: none;
       `;
-      damageContainer.appendChild(el);
-      setTimeout(() => el.remove(), 800);
+      container.appendChild(el);
+      const t = setTimeout(() => {
+        timers.delete(t);
+        el.remove();
+      }, 700);
+      timers.add(t);
     },
-    destroy: () => container.remove(),
+    flashHitmarker(kind) {
+      const hm = q("hitmarker");
+      hm.classList.remove("hud__hitmarker--show", "hud__hitmarker--kill");
+      void hm.offsetWidth;
+      if (kind === "kill") hm.classList.add("hud__hitmarker--kill");
+      hm.classList.add("hud__hitmarker--show");
+      const t = setTimeout(() => {
+        timers.delete(t);
+        hm.classList.remove("hud__hitmarker--show");
+      }, 120);
+      timers.add(t);
+    },
+    pushKillfeed(botId) {
+      const feed = q("killfeed");
+      const item = document.createElement("div");
+      item.className = "hud__feed-item";
+      item.innerHTML = `<span style="color:#ff9c00">Soldier: 76</span> ▶ <span>Training Bot ${String(botId + 1).padStart(2, "0")}</span>`;
+      feed.prepend(item);
+      while (feed.children.length > 5) feed.lastElementChild?.remove();
+      const t1 = setTimeout(() => {
+        timers.delete(t1);
+        item.classList.add("hud__feed-item--out");
+        const t2 = setTimeout(() => {
+          timers.delete(t2);
+          item.remove();
+        }, 350);
+        timers.add(t2);
+      }, FEED_TTL_MS);
+      timers.add(t1);
+    },
+    destroy() {
+      for (const t of timers) clearTimeout(t);
+      timers.clear();
+      container.remove();
+    },
   };
-}
-
-function createPanel(value: string, label: string, color: string) {
-  const panel = document.createElement("div");
-  panel.style.cssText = `
-    background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 4px; padding: 8px 14px; min-width: 70px; text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  `;
-  const valueEl = document.createElement("div");
-  valueEl.textContent = value;
-  valueEl.style.cssText = `font-size: 34px; font-weight: 800; color: ${color}; line-height: 1;`;
-  const labelEl = document.createElement("div");
-  labelEl.textContent = label;
-  labelEl.style.cssText = "font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px;";
-  panel.appendChild(valueEl);
-  panel.appendChild(labelEl);
-  return { panel, value: valueEl };
-}
-
-function createAmmoPanel() {
-  const panel = document.createElement("div");
-  panel.style.cssText = `
-    background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 4px; padding: 8px 14px; min-width: 80px; text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  `;
-  const current = document.createElement("div");
-  current.textContent = "30";
-  current.style.cssText = "font-size: 34px; font-weight: 800; color: #fff; line-height: 1;";
-  const max = document.createElement("div");
-  max.textContent = "/ 30";
-  max.style.cssText = "font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px;";
-  panel.appendChild(current);
-  panel.appendChild(max);
-  return { panel, current, max };
-}
-
-function createAbilityIcon(key: string, name: string) {
-  const panel = document.createElement("div");
-  panel.style.cssText = `
-    width: 56px; height: 56px; background: rgba(0,0,0,0.55);
-    border: 2px solid rgba(255,255,255,0.35); border-radius: 6px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  `;
-  const keyEl = document.createElement("div");
-  keyEl.textContent = key;
-  keyEl.style.cssText = "font-size: 22px; font-weight: 800; color: #fff; line-height: 1;";
-  const nameEl = document.createElement("div");
-  nameEl.textContent = name;
-  nameEl.style.cssText = "font-size: 9px; color: rgba(255,255,255,0.75); letter-spacing: 0.02em;";
-  const overlay = document.createElement("div");
-  overlay.style.cssText = `
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-    background: rgba(0,0,0,0.75); transition: height 0.1s linear;
-  `;
-  panel.appendChild(keyEl);
-  panel.appendChild(nameEl);
-  panel.appendChild(overlay);
-  (panel as unknown as { cooldownOverlay: HTMLDivElement }).cooldownOverlay = overlay;
-  return panel;
-}
-
-function setCooldown(
-  icon: HTMLDivElement & { cooldownOverlay?: HTMLDivElement },
-  remaining: number,
-) {
-  const overlay = icon.cooldownOverlay;
-  if (!overlay) return;
-  const max = icon.querySelector("div:first-child")?.textContent === "E" ? 6 : 15;
-  const pct = Math.min(100, Math.max(0, (remaining / max) * 100));
-  overlay.style.height = `${pct}%`;
-}
-
-function createUltimateMeter() {
-  const panel = document.createElement("div");
-  const fill = document.createElement("div");
-  fill.style.cssText =
-    "width: 0%; height: 100%; background: linear-gradient(90deg, #4488ff, #44ccff); transition: width 0.1s linear;";
-  panel.appendChild(fill);
-  return { panel, fill };
 }

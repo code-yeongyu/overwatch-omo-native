@@ -1,58 +1,66 @@
+import { asset } from "../lib/assets.js";
+import "./styles.css";
+
 export interface Lobby {
   container: HTMLDivElement;
-  startButton: HTMLButtonElement;
   destroy(): void;
 }
 
-export function createLobby(onStart: () => void): Lobby {
+export function createLobby(onPlay: () => void): Lobby {
   const container = document.createElement("div");
-  container.style.cssText = `
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 100%; height: 100%; background: #0a0a12; color: #fff; gap: 24px;
+  container.className = "lobby";
+
+  const abilities = [
+    { icon: asset("assets/icon_helix.png"), name: "Helix" },
+    { icon: asset("assets/icon_sprint.png"), name: "Sprint" },
+    { icon: asset("assets/icon_biotic.png"), name: "Biotic" },
+    { icon: asset("assets/icon_visor.png"), name: "Visor" },
+  ];
+
+  container.innerHTML = `
+    <div class="lobby__bg" style="background-image:url('${asset("assets/menu_bg.png")}')"></div>
+    <div class="lobby__shade"></div>
+    <img class="lobby__logo" src="${asset("assets/logo.png")}" alt="OMO" />
+    <nav class="lobby__menu">
+      <div class="lobby__kicker">Single Player // Training Facility</div>
+      <h1 class="lobby__title">Practice<br>Range</h1>
+      <button class="lobby__btn lobby__btn--primary" data-act="play">
+        Enter Range
+        <span class="lobby__btn-sub">Full Soldier: 76 Kit — Training Bots Live</span>
+      </button>
+    </nav>
+    <aside class="lobby__hero">
+      <img class="lobby__portrait" src="${asset("assets/portrait_soldier.png")}" alt="Soldier: 76" />
+      <div class="lobby__hero-row">
+        <span class="lobby__hero-name">Soldier: 76</span>
+        <span class="lobby__hero-role">Damage</span>
+      </div>
+      <p class="lobby__hero-desc">
+        Veteran vigilante armed with a heavy pulse rifle, helix rockets, a biotic emitter and a tactical targeting visor.
+      </p>
+      <div class="lobby__abilities">
+        ${abilities.map((a) => `<div class="lobby__ability"><img src="${a.icon}" alt="${a.name}" /><span>${a.name}</span></div>`).join("")}
+      </div>
+    </aside>
+    <footer class="lobby__foot">
+      <span>Overwatch OMO Native v0.1 — TypeScript 7 · three.js · Web Audio</span>
+      <span>Unofficial fan homage. Not affiliated with Blizzard Entertainment.</span>
+    </footer>
   `;
 
-  const title = document.createElement("h1");
-  title.textContent = "Overwatch OMO Native";
-  title.style.cssText = "font-size: 48px; margin: 0; letter-spacing: 2px;";
-  container.appendChild(title);
+  const onClick = (ev: MouseEvent): void => {
+    const target = ev.target instanceof Element ? ev.target.closest("[data-act]") : null;
+    if (target?.getAttribute("data-act") === "play") {
+      onPlay();
+    }
+  };
+  container.addEventListener("click", onClick);
 
-  const subtitle = document.createElement("p");
-  subtitle.textContent = "Practice Range — Soldier: 76";
-  subtitle.style.cssText = "font-size: 20px; color: #aaa; margin: 0;";
-  container.appendChild(subtitle);
-
-  const heroCard = document.createElement("div");
-  heroCard.style.cssText = `
-    border: 2px solid #4466ff; border-radius: 12px; padding: 24px 48px;
-    background: #111122; text-align: center;
-  `;
-  const heroName = document.createElement("h2");
-  heroName.textContent = "Soldier: 76";
-  heroName.style.cssText = "margin: 0 0 8px; color: #66aaff;";
-  heroCard.appendChild(heroName);
-  const heroDesc = document.createElement("p");
-  heroDesc.textContent = "Hitscan rifle | Sprint | Helix Rockets | Biotic Field | Tactical Visor";
-  heroDesc.style.cssText = "margin: 0; color: #ccc; font-size: 14px;";
-  heroCard.appendChild(heroDesc);
-  container.appendChild(heroCard);
-
-  const startButton = document.createElement("button");
-  startButton.textContent = "Enter Practice Range";
-  startButton.style.cssText = `
-    font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px;
-    background: #ff6600; color: #fff; cursor: pointer; font-weight: bold;
-  `;
-  startButton.addEventListener("click", onStart);
-  container.appendChild(startButton);
-
-  const controls = document.createElement("div");
-  controls.style.cssText = "color: #888; font-size: 14px; text-align: center;";
-  controls.innerHTML = `
-    <p><strong>WASD</strong> Move · <strong>Shift</strong> Sprint · <strong>Space</strong> Jump</p>
-    <p><strong>Mouse</strong> Aim · <strong>LMB</strong> Fire · <strong>R</strong> Reload</p>
-    <p><strong>E</strong> Helix Rockets · <strong>Q</strong> Tactical Visor</p>
-  `;
-  container.appendChild(controls);
-
-  return { container, startButton, destroy: () => container.remove() };
+  return {
+    container,
+    destroy: () => {
+      container.removeEventListener("click", onClick);
+      container.remove();
+    },
+  };
 }

@@ -1,0 +1,668 @@
+@import url("https://fonts.googleapis.com/css2?family=Big+Noodle+Too&family=Rajdhani:wght@500;600;700&display=swap");
+
+:root {
+  --ow-orange: #ff9c00;
+  --ow-orange-dark: #cc6600;
+  --ow-blue: #00aaff;
+  --ow-blue-dark: #0055aa;
+  --ow-red: #ff4444;
+  --ow-bg: rgba(10, 14, 20, 0.82);
+  --ow-panel: rgba(0, 0, 0, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Lobby */
+.lobby {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  font-family: "Rajdhani", "Big Noodle Too", Impact, system-ui, sans-serif;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.lobby__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.85);
+}
+
+.lobby__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.78) 0%,
+    rgba(0, 0, 0, 0.35) 55%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+.lobby__logo {
+  position: absolute;
+  top: 28px;
+  left: 36px;
+  height: 64px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+.lobby__menu {
+  position: absolute;
+  top: 50%;
+  left: 60px;
+  transform: translateY(-50%);
+  max-width: 520px;
+}
+
+.lobby__kicker {
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  color: var(--ow-orange);
+  margin-bottom: 8px;
+}
+
+.lobby__title {
+  font-family: "Big Noodle Too", Impact, sans-serif;
+  font-size: 82px;
+  line-height: 0.92;
+  margin: 0 0 36px;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+}
+
+.lobby__btn {
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  padding: 18px 24px;
+  margin-bottom: 14px;
+  border: none;
+  background: var(--ow-panel);
+  color: #fff;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+
+.lobby__btn:hover {
+  transform: translateX(6px);
+  background: rgba(255, 156, 0, 0.16);
+}
+
+.lobby__btn--primary {
+  background: var(--ow-orange);
+  color: #000;
+}
+
+.lobby__btn--primary:hover {
+  background: #ffb833;
+}
+
+.lobby__btn-sub {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 4px;
+}
+
+.lobby__hero {
+  position: absolute;
+  top: 50%;
+  right: 60px;
+  transform: translateY(-50%);
+  width: 360px;
+  background: var(--ow-bg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 24px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+}
+
+.lobby__portrait {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  object-position: top;
+  margin-bottom: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.lobby__hero-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.lobby__hero-name {
+  font-family: "Big Noodle Too", Impact, sans-serif;
+  font-size: 42px;
+}
+
+.lobby__hero-role {
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--ow-orange);
+  color: #000;
+  padding: 2px 8px;
+}
+
+.lobby__hero-desc {
+  font-size: 15px;
+  line-height: 1.4;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 18px;
+}
+
+.lobby__abilities {
+  display: flex;
+  gap: 10px;
+}
+
+.lobby__ability {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.lobby__ability img {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.lobby__foot {
+  position: absolute;
+  bottom: 20px;
+  left: 36px;
+  right: 36px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: none;
+}
+
+/* HUD */
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  font-family: "Rajdhani", "Big Noodle Too", Impact, system-ui, sans-serif;
+  color: #fff;
+}
+
+.hud__scoreboard {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  gap: 2px;
+  background: var(--ow-bg);
+  padding: 10px 14px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+
+.hud__scoreboard > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+}
+
+.hud__scoreboard dt {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.hud__scoreboard dd {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hud__killfeed {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  width: 260px;
+}
+
+.hud__feed-item {
+  background: rgba(0, 0, 0, 0.55);
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  animation: feedIn 0.25s ease-out;
+}
+
+.hud__feed-item--out {
+  opacity: 0;
+  transform: translateX(20px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+@keyframes feedIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.hud__crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+}
+
+.hud__crosshair::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+.hud__crosshair i {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.hud__crosshair .cx-t {
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 6px;
+  transform: translateX(-50%);
+}
+.hud__crosshair .cx-b {
+  left: 50%;
+  bottom: 0;
+  width: 2px;
+  height: 6px;
+  transform: translateX(-50%);
+}
+.hud__crosshair .cx-l {
+  top: 50%;
+  left: 0;
+  width: 6px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+.hud__crosshair .cx-r {
+  top: 50%;
+  right: 0;
+  width: 6px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.hud__hitmarker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+}
+
+.hud__hitmarker--show {
+  opacity: 1;
+}
+
+.hud__hitmarker i {
+  position: absolute;
+  width: 6px;
+  height: 2px;
+  background: #fff;
+}
+
+.hud__hitmarker .hm-tl {
+  left: 2px;
+  top: 4px;
+  transform: rotate(-45deg);
+}
+.hud__hitmarker .hm-tr {
+  right: 2px;
+  top: 4px;
+  transform: rotate(45deg);
+}
+.hud__hitmarker .hm-bl {
+  left: 2px;
+  bottom: 4px;
+  transform: rotate(45deg);
+}
+.hud__hitmarker .hm-br {
+  right: 2px;
+  bottom: 4px;
+  transform: rotate(-45deg);
+}
+
+.hud__hitmarker--kill i {
+  background: var(--ow-orange);
+  width: 8px;
+  height: 2px;
+}
+
+.hud__hp {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hud__hp-num {
+  font-family: "Big Noodle Too", Impact, sans-serif;
+  font-size: 56px;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.hud__hp-bar {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.hud__hp-seg {
+  width: 18px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.15s ease;
+}
+
+.hud__hp-seg--full {
+  background: #fff;
+}
+
+.hud__hp-state {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ow-blue);
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hud__hp-state--on {
+  opacity: 1;
+}
+
+.hud__ult {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hud__ult-ring {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(var(--ow-orange) var(--ult-pct), rgba(0, 0, 0, 0.55) var(--ult-pct));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 18px rgba(255, 156, 0, 0.25);
+}
+
+.hud__ult-ring::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: rgba(10, 14, 20, 0.9);
+}
+
+.hud__ult-val {
+  position: relative;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hud__ult-hint {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 6px;
+}
+
+.hud__weapon {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  text-align: right;
+}
+
+.hud__weapon-reload {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ow-orange);
+  opacity: 0;
+  margin-bottom: 4px;
+}
+
+.hud__weapon-reload--on {
+  opacity: 1;
+}
+
+.hud__weapon-ammo {
+  font-family: "Big Noodle Too", Impact, sans-serif;
+  font-size: 52px;
+  line-height: 1;
+}
+
+.hud__weapon-ammo small {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hud__weapon-name {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
+.hud__abilities {
+  position: absolute;
+  bottom: 110px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+}
+
+.hud__ability {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background: var(--ow-panel);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hud__ability img {
+  width: 32px;
+  height: 32px;
+}
+
+.hud__ability-key {
+  position: absolute;
+  bottom: -14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hud__ability-cd {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--cd, 0%);
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  padding-bottom: 2px;
+}
+
+.hud__visor {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hud__visor--on {
+  opacity: 1;
+}
+
+.hud__visor-label {
+  font-size: 16px;
+  letter-spacing: 0.24em;
+  color: var(--ow-orange);
+  margin-bottom: 6px;
+}
+
+.hud__visor-bar {
+  width: 160px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.hud__visor-fill {
+  height: 100%;
+  background: var(--ow-orange);
+  transform-origin: left;
+}
+
+.hud__lock {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.hud__lock--hidden {
+  display: none;
+}
+
+.hud__lock-box {
+  text-align: center;
+}
+
+.hud__lock-title {
+  font-family: "Big Noodle Too", Impact, sans-serif;
+  font-size: 42px;
+  color: var(--ow-orange);
+  margin-bottom: 8px;
+}
+
+.hud__lock-sub {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 24px;
+}
+
+.hud__controls {
+  display: grid;
+  grid-template-columns: repeat(2, 200px);
+  gap: 8px 24px;
+  margin: 0 auto 24px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.hud__controls span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud__controls b {
+  display: inline-block;
+  min-width: 56px;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.15);
+  text-align: center;
+  font-weight: 700;
+}
+
+.hud__lock-btn {
+  padding: 12px 28px;
+  border: none;
+  background: var(--ow-orange);
+  color: #000;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
