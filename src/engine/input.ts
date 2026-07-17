@@ -19,6 +19,8 @@ export interface InputAdapter {
   bindElement(element: HTMLElement): void;
   unbind(): void;
   isPointerLocked(): boolean;
+  requestLock(): void;
+  exitLock(): void;
 }
 
 export const DEFAULT_BINDINGS: Record<string, keyof InputCommand> = {
@@ -170,6 +172,16 @@ export function createInputAdapter(bindings = DEFAULT_BINDINGS): InputAdapter {
     },
     isPointerLocked() {
       return pointerLocked;
+    },
+    requestLock() {
+      boundElement?.requestPointerLock().catch(() => {
+        // Pointer lock may be unavailable; ignore failure.
+      });
+    },
+    exitLock() {
+      if (document.exitPointerLock) {
+        document.exitPointerLock();
+      }
     },
   };
 }

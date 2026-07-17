@@ -3,6 +3,7 @@ import { createGameAudio } from "./audio/game-audio.js";
 import { createMusicSystem, type MusicSystem } from "./audio/music.js";
 import { createInputAdapter } from "./engine/input.js";
 import { createGameLoop } from "./engine/loop.js";
+import { createScoreState, recordHit, recordKill, recordShotFired } from "./game/score.js";
 import {
   type BioticField,
   deployBioticField,
@@ -27,7 +28,7 @@ import { createLobby } from "./ui/lobby.js";
 
 const logger = createLogger("info", "main");
 
-function startGame(app: HTMLDivElement): void {
+function startGame(app: HTMLDivElement, onExit: () => void): void {
   app.innerHTML = "";
   const canvas = createCanvas(app);
   const renderer = new GameRenderer(canvas);
@@ -39,16 +40,24 @@ function startGame(app: HTMLDivElement): void {
   const range = buildPracticeRange(renderer, spatial);
   const camera = new FirstPersonCamera();
   const soldier = createSoldier76State();
+  const score = createScoreState();
   const qaRenderTimes: number[] = [];
   if (import.meta.env.DEV) {
     const devWindow = window as unknown as {
       __qaGiveUltimate?: () => void;
       __qaRenderTimes?: number[];
+      __qaHideLock?: () => void;
     };
     devWindow.__qaGiveUltimate = () => {
       soldier.ultimateCharge = 100;
     };
     devWindow.__qaRenderTimes = qaRenderTimes;
+    devWindow.__qaHideLock = () => {
+      (hud.container.querySelector("[data-h='lock']") as HTMLElement | null)?.style.setProperty(
+        "display",
+        "none",
+      );
+    };
   }
   const hud = createHud();
   const vfx = createVfxSystem(renderer.scene, camera);
@@ -62,6 +71,17 @@ function startGame(app: HTMLDivElement): void {
   const rockets: HelixRocket[] = [];
   const bioticFields: BioticField[] = [];
   const tempDir = new THREE.Vector3();
+
+  const onLockClick = (ev: MouseEvent): void => {
+    const target = ev.target instanceof Element ? ev.target.closest("[data-act]") : null;
+    if (target?.getAttribute("data-act") === "lobby") {
+      cleanup();
+      onExit();
+      return;
+    }
+    input.requestLock();
+  };
+  hud.container.addEventListener("click", onLockClick);
 
   const loop = createGameLoop(
     {
@@ -98,6 +118,7 @@ function startGame(app: HTMLDivElement): void {
         camera.setTargetFov(sprinting ? 95 : 75);
 
         if (soldier.weapon.ammo < lastFiredAmmo) {
+          recordShotFired(score);
           audio.playGunshot();
           vfx.muzzleFlash(true);
           viewmodel.fire();
@@ -108,11 +129,16 @@ function startGame(app: HTMLDivElement): void {
             const target = range.targets.find((t) => t.id === hit.targetId);
             if (target) {
               target.health -= hit.damage;
+              recordHit(score, hit.damage);
               vfx.spawnHit(target.mesh.position);
+              hud.flashHitmarker("hit");
               hud.showDamageNumber(hit.damage);
               if (target.health <= 0) {
                 target.respawnTimer = 3;
+                recordKill(score);
                 soldier.ultimateCharge = Math.min(100, soldier.ultimateCharge + 10);
+                hud.flashHitmarker("kill");
+                hud.pushKillfeed(target.id - 100);
               }
             }
           }
@@ -131,8 +157,6 @@ function startGame(app: HTMLDivElement): void {
           rockets.push(launchHelixRocket(renderer.scene, camera.object.position, tempDir));
           audio.playExplosion();
         }
-
-        // Tactical visor is activated inside updateSoldier76.
 
         if (command.bioticFieldPressed && soldier.bioticFieldCooldown <= 0) {
           soldier.bioticFieldCooldown = SOLDIER_76.bioticField.cooldown;
@@ -155,12 +179,24 @@ function startGame(app: HTMLDivElement): void {
         camera.copyTo(renderer.camera);
         renderer.render();
         qaRenderTimes.push(performance.now() - renderStart);
-        hud.setHealth(soldier.health);
-        hud.setAmmo(soldier.weapon.ammo, SOLDIER_76.rifle.clipSize);
-        hud.setAbilityCooldowns(soldier.helixCooldown, soldier.bioticFieldCooldown);
-        hud.setUltimate(soldier.ultimateCharge);
-        hud.setVisorActive(soldier.weapon.visorActive);
-        hud.setState(soldier.state);
+        hud.update({
+          health: soldier.health,
+          maxHealth: SOLDIER_76.maxHealth,
+          ammo: soldier.weapon.ammo,
+          maxAmmo: SOLDIER_76.rifle.clipSize,
+          reloading: soldier.weapon.reloading,
+          helixCooldown: soldier.helixCooldown,
+          helixMax: SOLDIER_76.helix.cooldown,
+          bioticCooldown: soldier.bioticFieldCooldown,
+          bioticMax: SOLDIER_76.bioticField.cooldown,
+          bioticActive: bioticFields.length > 0,
+          ultimateCharge: soldier.ultimateCharge,
+          visorActive: soldier.weapon.visorActive,
+          visorRemaining: soldier.weapon.visorTimer,
+          visorDuration: SOLDIER_76.visor.duration,
+          score,
+          locked: !input.isPointerLocked(),
+        });
       },
     },
     logger,
@@ -179,13 +215,16 @@ function startGame(app: HTMLDivElement): void {
   canvas.addEventListener("click", startAudio);
   loop.start();
 
-  window.addEventListener("beforeunload", () => {
+  const cleanup = (): void => {
     loop.stop();
     renderer.clear();
     input.unbind();
+    hud.container.removeEventListener("click", onLockClick);
     hud.destroy();
     music?.stop();
-  });
+  };
+
+  window.addEventListener("beforeunload", cleanup);
 }
 
 function main(): void {
@@ -197,7 +236,9 @@ function main(): void {
 
   const lobby = createLobby(() => {
     lobby.destroy();
-    startGame(app);
+    startGame(app, () => {
+      main();
+    });
   });
   app.appendChild(lobby.container);
 }
