@@ -24,10 +24,13 @@ const context = await browser.newContext({ viewport: { width: 1920, height: 1080
 const page = await context.newPage();
 
 await page.goto(url, { waitUntil: "networkidle" });
-await page.click("button:has-text('Enter Practice Range')");
+await page.click("button:has-text('Enter Range')");
 await page.waitForTimeout(500);
-
-// Allow time for dev-window instrumentation to attach.
+await page.click("[data-h='lock']");
+await page.evaluate(() => {
+  // @ts-expect-error expose for QA
+  window.__qaHideLock?.();
+});
 await page.waitForTimeout(500);
 
 // Perform actions during benchmark

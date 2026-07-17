@@ -28,13 +28,16 @@ const page = await context.newPage();
 await page.goto(url, { waitUntil: "networkidle" });
 await page.screenshot({ path: join(evidenceDir, "01-lobby.png") });
 
-await page.click("button:has-text('Enter Practice Range')");
+await page.click("button:has-text('Enter Range')");
 await page.waitForTimeout(500);
 await page.screenshot({ path: join(evidenceDir, "02-game.png") });
 
-const canvas = await page.locator("canvas");
-await canvas.click();
+await page.click("[data-h='lock']");
 await page.waitForTimeout(200);
+await page.evaluate(() => {
+  // @ts-expect-error expose for QA
+  window.__qaHideLock?.();
+});
 
 await page.keyboard.down("w");
 await page.waitForTimeout(500);
@@ -56,6 +59,10 @@ await page.screenshot({ path: join(evidenceDir, "05-reload.png") });
 await page.keyboard.press("e");
 await page.waitForTimeout(300);
 await page.screenshot({ path: join(evidenceDir, "06-helix.png") });
+
+await page.keyboard.press("f");
+await page.waitForTimeout(300);
+await page.screenshot({ path: join(evidenceDir, "08-biotic.png") });
 
 // Trigger Tactical Visor by giving ultimate charge via console and pressing Q
 await page.evaluate(() => {
