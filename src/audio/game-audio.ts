@@ -1,5 +1,5 @@
 export interface GameAudio {
-  enable(): Promise<void>;
+  enable(): Promise<AudioContext>;
   playGunshot(): void;
   playExplosion(): void;
   playReload(): void;
@@ -48,6 +48,7 @@ export function createGameAudio(): GameAudio {
       if (c.state !== "running") {
         await c.resume();
       }
+      return c;
     },
     playGunshot() {
       const c = ensureContext();

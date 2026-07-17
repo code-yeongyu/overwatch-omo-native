@@ -57,6 +57,15 @@ await page.keyboard.press("e");
 await page.waitForTimeout(300);
 await page.screenshot({ path: join(evidenceDir, "06-helix.png") });
 
+// Trigger Tactical Visor by giving ultimate charge via console and pressing Q
+await page.evaluate(() => {
+  // @ts-expect-error expose for QA
+  window.__qaGiveUltimate?.();
+});
+await page.keyboard.press("q");
+await page.waitForTimeout(300);
+await page.screenshot({ path: join(evidenceDir, "07-visor.png") });
+
 await browser.close();
 await server.close();
 

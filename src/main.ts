@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { createGameAudio } from "./audio/game-audio.js";
+import { createMusicSystem, type MusicSystem } from "./audio/music.js";
 import { createInputAdapter } from "./engine/input.js";
 import { createGameLoop } from "./engine/loop.js";
 import {
@@ -13,6 +14,7 @@ import {
 import { SOLDIER_76 } from "./heroes/soldier76/constants.js";
 import { raycastTargets } from "./heroes/soldier76/shooting.js";
 import { createSoldier76State, updateSoldier76 } from "./heroes/soldier76/state.js";
+import { findVisorTarget } from "./heroes/soldier76/visor.js";
 import { createLogger } from "./lib/logger.js";
 import { SpatialHash } from "./physics/spatial.js";
 import { buildPracticeRange, updateTargets } from "./range/practice-range.js";
@@ -36,8 +38,14 @@ function startGame(app: HTMLDivElement): void {
   const range = buildPracticeRange(renderer, spatial);
   const camera = new FirstPersonCamera();
   const soldier = createSoldier76State();
+  if (import.meta.env.DEV) {
+    (window as unknown as Record<string, () => void>)["__qaGiveUltimate"] = () => {
+      soldier.ultimateCharge = 100;
+    };
+  }
   const hud = createHud();
   const vfx = createVfxSystem(renderer.scene, camera);
+  let music: MusicSystem | null = null;
   app.appendChild(hud.container);
 
   let lastFiredAmmo = soldier.weapon.ammo;
@@ -63,6 +71,18 @@ function startGame(app: HTMLDivElement): void {
         }
 
         camera.setPosition(soldier.position.x, soldier.position.y, soldier.position.z);
+
+        if (soldier.weapon.visorActive) {
+          const visorTarget = findVisorTarget(camera, range.targets);
+          if (visorTarget) {
+            const targetYaw = Math.atan2(visorTarget.direction.x, visorTarget.direction.z);
+            let diff = targetYaw - soldier.yaw;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            soldier.yaw += diff * 0.25;
+          }
+        }
+
         camera.addLookDelta(command.lookDeltaX, command.lookDeltaY, 0.002);
 
         if (soldier.weapon.ammo < lastFiredAmmo) {
@@ -121,10 +141,14 @@ function startGame(app: HTMLDivElement): void {
     logger,
   );
 
-  const startAudio = () => {
-    audio.enable().catch(() => {
+  const startAudio = async () => {
+    try {
+      const ctx = await audio.enable();
+      music = createMusicSystem(ctx);
+      music.start();
+    } catch {
       // Audio may require gesture; ignore failure.
-    });
+    }
     canvas.removeEventListener("click", startAudio);
   };
   canvas.addEventListener("click", startAudio);
@@ -135,6 +159,7 @@ function startGame(app: HTMLDivElement): void {
     renderer.clear();
     input.unbind();
     hud.destroy();
+    music?.stop();
   });
 }
 
