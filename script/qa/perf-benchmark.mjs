@@ -27,18 +27,8 @@ await page.goto(url, { waitUntil: "networkidle" });
 await page.click("button:has-text('Enter Practice Range')");
 await page.waitForTimeout(500);
 
-// Inject frame-time collector
-await page.evaluate(() => {
-  window.frameTimes = [];
-  let last = performance.now();
-  const measure = () => {
-    const now = performance.now();
-    window.frameTimes.push(now - last);
-    last = now;
-    requestAnimationFrame(measure);
-  };
-  requestAnimationFrame(measure);
-});
+// Allow time for dev-window instrumentation to attach.
+await page.waitForTimeout(500);
 
 // Perform actions during benchmark
 const canvas = await page.locator("canvas");
@@ -51,7 +41,10 @@ await page.waitForTimeout(60000);
 await page.mouse.up();
 await page.keyboard.up("w");
 
-const times = await page.evaluate(() => window.frameTimes.slice(10));
+const times = await page.evaluate(() => {
+  const renderTimes = window.__qaRenderTimes ?? [];
+  return renderTimes.slice(10);
+});
 await browser.close();
 await server.close();
 

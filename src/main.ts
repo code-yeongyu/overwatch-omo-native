@@ -21,6 +21,7 @@ import { buildPracticeRange, updateTargets } from "./range/practice-range.js";
 import { FirstPersonCamera } from "./render/camera.js";
 import { createCanvas, GameRenderer } from "./render/renderer.js";
 import { createVfxSystem } from "./render/vfx.js";
+import { createSoldierRifleViewmodel } from "./render/viewmodel.js";
 import { createHud } from "./ui/hud.js";
 import { createLobby } from "./ui/lobby.js";
 
@@ -38,18 +39,26 @@ function startGame(app: HTMLDivElement): void {
   const range = buildPracticeRange(renderer, spatial);
   const camera = new FirstPersonCamera();
   const soldier = createSoldier76State();
+  const qaRenderTimes: number[] = [];
   if (import.meta.env.DEV) {
-    (window as unknown as Record<string, () => void>)["__qaGiveUltimate"] = () => {
+    const devWindow = window as unknown as {
+      __qaGiveUltimate?: () => void;
+      __qaRenderTimes?: number[];
+    };
+    devWindow.__qaGiveUltimate = () => {
       soldier.ultimateCharge = 100;
     };
+    devWindow.__qaRenderTimes = qaRenderTimes;
   }
   const hud = createHud();
   const vfx = createVfxSystem(renderer.scene, camera);
+  const viewmodel = createSoldierRifleViewmodel(renderer.scene, camera);
   let music: MusicSystem | null = null;
   app.appendChild(hud.container);
 
   let lastFiredAmmo = soldier.weapon.ammo;
   let lastReloading = soldier.weapon.reloading;
+  let sprinting = false;
   const rockets: HelixRocket[] = [];
   const bioticFields: BioticField[] = [];
   const tempDir = new THREE.Vector3();
@@ -59,6 +68,8 @@ function startGame(app: HTMLDivElement): void {
       simulate(_step, dt) {
         const command = input.getCommand();
         updateSoldier76(soldier, command, dt);
+
+        sprinting = soldier.state === "sprinting";
 
         soldier.position.x += soldier.velocity.x * dt;
         soldier.position.z += soldier.velocity.z * dt;
@@ -84,10 +95,13 @@ function startGame(app: HTMLDivElement): void {
         }
 
         camera.addLookDelta(command.lookDeltaX, command.lookDeltaY, 0.002);
+        camera.setTargetFov(sprinting ? 95 : 75);
 
         if (soldier.weapon.ammo < lastFiredAmmo) {
           audio.playGunshot();
           vfx.muzzleFlash(true);
+          viewmodel.fire();
+          camera.applyRecoil(0.015);
           vfx.spawnTracer();
           const hit = raycastTargets(camera, spatial, range.targets);
           if (hit) {
@@ -95,6 +109,7 @@ function startGame(app: HTMLDivElement): void {
             if (target) {
               target.health -= hit.damage;
               vfx.spawnHit(target.mesh.position);
+              hud.showDamageNumber(hit.damage);
               if (target.health <= 0) {
                 target.respawnTimer = 3;
                 soldier.ultimateCharge = Math.min(100, soldier.ultimateCharge + 10);
@@ -106,6 +121,7 @@ function startGame(app: HTMLDivElement): void {
 
         if (soldier.weapon.reloading && !lastReloading) {
           audio.playReload();
+          viewmodel.reload();
         }
         lastReloading = soldier.weapon.reloading;
 
@@ -116,11 +132,9 @@ function startGame(app: HTMLDivElement): void {
           audio.playExplosion();
         }
 
-        if (command.ultimatePressed && soldier.ultimateCharge >= 100) {
-          soldier.ultimateCharge = 0;
-        }
+        // Tactical visor is activated inside updateSoldier76.
 
-        if (command.jumpPressed && soldier.bioticFieldCooldown <= 0) {
+        if (command.bioticFieldPressed && soldier.bioticFieldCooldown <= 0) {
           soldier.bioticFieldCooldown = SOLDIER_76.bioticField.cooldown;
           bioticFields.push(deployBioticField(renderer.scene, soldier.position));
         }
@@ -131,10 +145,21 @@ function startGame(app: HTMLDivElement): void {
         vfx.update(dt);
       },
       render(_alpha) {
+        const renderStart = performance.now();
+        camera.update(1 / 60);
+        viewmodel.update(1 / 60, {
+          idle: soldier.state === "idle",
+          reloading: soldier.weapon.reloading,
+          sprinting,
+        });
         camera.copyTo(renderer.camera);
         renderer.render();
+        qaRenderTimes.push(performance.now() - renderStart);
         hud.setHealth(soldier.health);
         hud.setAmmo(soldier.weapon.ammo, SOLDIER_76.rifle.clipSize);
+        hud.setAbilityCooldowns(soldier.helixCooldown, soldier.bioticFieldCooldown);
+        hud.setUltimate(soldier.ultimateCharge);
+        hud.setVisorActive(soldier.weapon.visorActive);
         hud.setState(soldier.state);
       },
     },

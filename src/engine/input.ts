@@ -8,6 +8,7 @@ export interface InputCommand {
   jumpPressed: boolean;
   reloadPressed: boolean;
   ability1Pressed: boolean;
+  bioticFieldPressed: boolean;
   ultimatePressed: boolean;
   lookDeltaX: number;
   lookDeltaY: number;
@@ -30,6 +31,7 @@ export const DEFAULT_BINDINGS: Record<string, keyof InputCommand> = {
   Space: "jumpPressed",
   KeyR: "reloadPressed",
   KeyE: "ability1Pressed",
+  KeyF: "bioticFieldPressed",
   KeyQ: "ultimatePressed",
 };
 
@@ -156,6 +158,7 @@ export function createInputAdapter(bindings = DEFAULT_BINDINGS): InputAdapter {
         jumpPressed: wasBindingPressed("jumpPressed"),
         reloadPressed: wasBindingPressed("reloadPressed"),
         ability1Pressed: wasBindingPressed("ability1Pressed"),
+        bioticFieldPressed: wasBindingPressed("bioticFieldPressed"),
         ultimatePressed: wasBindingPressed("ultimatePressed"),
         lookDeltaX,
         lookDeltaY,
