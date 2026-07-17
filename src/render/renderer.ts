@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 
 export interface RenderSnapshot {
   cameraPosition: { x: number; y: number; z: number };
@@ -10,6 +13,7 @@ export class GameRenderer {
   readonly scene: THREE.Scene;
   readonly camera: THREE.PerspectiveCamera;
   readonly renderer: THREE.WebGLRenderer;
+  private readonly composer: EffectComposer;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -20,8 +24,8 @@ export class GameRenderer {
     }
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x87ceeb);
-    this.scene.fog = new THREE.Fog(0x87ceeb, 20, 120);
+    this.scene.background = new THREE.Color(0x4a5560);
+    this.scene.fog = new THREE.Fog(0x4a5560, 30, 130);
 
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -37,13 +41,17 @@ export class GameRenderer {
       powerPreference: "high-performance",
     });
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(ambient);
-    const dir = new THREE.DirectionalLight(0xffffff, 1);
-    dir.position.set(10, 20, 10);
-    this.scene.add(dir);
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(canvas.clientWidth * 0.4, canvas.clientHeight * 0.4),
+      0.3,
+      0.3,
+      0.9,
+    );
+    this.composer.addPass(bloom);
 
     window.addEventListener("resize", () => this.resize());
   }
@@ -53,10 +61,11 @@ export class GameRenderer {
     this.camera.aspect = clientWidth / clientHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(clientWidth, clientHeight);
+    this.composer.setSize(clientWidth, clientHeight);
   }
 
   render(): void {
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   }
 
   clear(): void {
