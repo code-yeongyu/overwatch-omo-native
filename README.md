@@ -24,6 +24,17 @@ Built with **TypeScript 7 (tsgo)**, **Three.js**, **Biome**, **Vite**, and **Bun
 - Procedural audio SFX and generative background music
 - 60 FPS performance target with in-frame instrumentation
 
+## Performance
+
+Measured on Apple M5 Max at 1920x1080 for 60 seconds:
+
+- p50 frame time: 13.8 ms (72.5 FPS)
+- p95 frame time: 16.1 ms (62.1 FPS)
+- p99 frame time: 17.0 ms (58.8 FPS)
+- max spike: 67.2 ms
+
+Run the benchmark yourself with `bun run script/qa/perf-benchmark.mjs`.
+
 ## Quick start
 
 ```bash
