@@ -131,7 +131,9 @@ export function createInputAdapter(bindings = DEFAULT_BINDINGS): InputAdapter {
       if (!boundElement) {
         return;
       }
-      document.exitPointerLock();
+      if (document.exitPointerLock) {
+        document.exitPointerLock();
+      }
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("keyup", onKeyUp);
       document.removeEventListener("mousedown", onMouseDown);

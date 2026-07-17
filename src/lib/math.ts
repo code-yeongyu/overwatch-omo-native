@@ -8,6 +8,17 @@ export interface Vec3 {
   readonly z: number;
 }
 
+export interface MutableVec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface Aabb {
+  min: Vec3;
+  max: Vec3;
+}
+
 export function vec3(x = 0, y = 0, z = 0): Vec3 {
   return { x, y, z };
 }
@@ -72,7 +83,6 @@ export class SeededRng {
   }
 
   next(): number {
-    // xorshift32
     this.state ^= this.state << 13;
     this.state ^= this.state >>> 17;
     this.state ^= this.state << 5;

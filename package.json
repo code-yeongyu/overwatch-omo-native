@@ -23,7 +23,8 @@
     "@types/three": "latest",
     "typescript": "^7.0.0-beta",
     "vite": "8.1.5",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "happy-dom": "latest"
   },
   "dependencies": {
     "three": "^0.175.0"

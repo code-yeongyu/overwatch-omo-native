@@ -1,0 +1,38 @@
+export const SOLDIER_76 = {
+  baseSpeed: 5.5,
+  sprintSpeed: 8.25,
+  sprintRecovery: 0.3,
+  rifle: {
+    damage: 19,
+    fireRate: 9,
+    clipSize: 30,
+    reloadTime: 1.5,
+    reloadAmmoTime: 0.736,
+    falloffStart: 30,
+    falloffEnd: 50,
+    minDamage: 5.7,
+  },
+  helix: {
+    cooldown: 6,
+    speed: 50,
+    directDamage: 120,
+    splashInner: 80,
+    splashOuter: 40,
+    innerRadius: 1,
+    outerRadius: 3,
+    selfDamageFactor: 0.5,
+  },
+  bioticField: {
+    cooldown: 15,
+    duration: 5,
+    radius: 5,
+    healPerSecond: 40,
+  },
+  visor: {
+    duration: 6,
+    cone: 45,
+    range: 45,
+    reloadTime: 0.5,
+  },
+  maxHealth: 200,
+} as const;
